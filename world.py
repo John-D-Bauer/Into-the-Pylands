@@ -1,7 +1,8 @@
 ''' TODO:
-    - Add preconfigured areas to whole map
-    - Create blocks of designed or random areas
-    - Randomly assign those blocks
+    - Make different area instead of water
+    - Add more colors instead of using termcolor
+    - Make predetermined areas of the map
+    - Combine both predetermined areas and random areas
 '''
 
 import random
@@ -33,26 +34,47 @@ class World:
 
         #self._world = self.buildStartingArea()
 
-        # plain = self.buildRandArea("PLAIN", 11, 11)
-        # plain2 = self.buildRandArea("PLAIN", 11, 11)
-        # plain3 = self.buildRandArea("PLAIN", 11, 11)
-        # mount = self.buildRandArea("MOUNT", 11, 11)
-        # mount2 = self.buildRandArea("MOUNT", 11, 11)
-        # mount3 = self.buildRandArea("MOUNT", 11, 11)
-        # desert = self.buildRandArea("DSSRT", 11, 11)
-        # desert2 = self.buildRandArea("DSSRT", 11, 11)
-        # lake = self.buildRandArea("LAKES", 11, 11)
+        area_size = 29
 
-        #biomes = [plain, plain2, plain3, mount, mount2, mount3, desert, desert2, lake]
+        plain = self.buildRandArea("PLAIN", area_size, area_size)
+        plain2 = self.buildRandArea("PLAIN", area_size, area_size)
+        plain3 = self.buildRandArea("PLAIN", area_size, area_size)
+        mount = self.buildRandArea("MOUNT", area_size, area_size)
+        mount2 = self.buildRandArea("MOUNT", area_size, area_size)
+        mount3 = self.buildRandArea("MOUNT", area_size, area_size)
+        desert = self.buildRandArea("DSSRT", area_size, area_size)
+        desert2 = self.buildRandArea("DSSRT", area_size, area_size)
+        lake = self.buildRandArea("LAKES", area_size, area_size)
 
-        #random.shuffle(biomes)
+        biomes = [plain, plain2, plain3, mount, mount2, mount3, desert, desert2, lake]
 
-        # for biome in biomes:
-        #     self.printWorld(biome)
+        random.shuffle(biomes)
 
-        self._world = self.buildRandArea(81, 51)
+        biomeRowCnt = 0
+        for biomeRowCnt in range(3):
+            biomeRow = [biomes[biomeRowCnt*3], biomes[(biomeRowCnt*3) + 1], biomes[(biomeRowCnt*3) + 2]]
+            for row, _ in enumerate(biomeRow[0]):
+                for biome in biomeRow:
+                    self.printRow(biome, row)
+                print()
+              
+
+        #self._world = self.buildRandArea(81, 51)
             
-        
+    def printRow(self, area, row):
+        cRow = []
+        for t in area[row]:
+            if t == "GRSS" or t == "SAND" or t == "GRVL":
+                iter = random.choice(self.worldStrs[t])
+                s = iter
+            else:
+                s = self.worldStrs[t]
+            cRow.append(s)
+                
+        #os.system("cls")
+        for s in cRow:
+            print(s, end="")
+
 
 
     def buildStartingArea(self):
@@ -73,37 +95,18 @@ class World:
 
         return start
 
-    def buildRandArea(self, width, height):
-        bWorld = self.createBiomes(width, height)
-        randArea = self.createAltitude(bWorld, width, height)
+    def buildRandArea(self, biome, width, height):
+        randArea = self.createAltitude(biome, width, height)
 
         return randArea
 
-    def createBiomes(self, w, h):
-        biomes = PerlinNoise(octaves=4, seed=random.randint(0, 10000))
-        bWorld = []
-        for y in range(h):
-            row = []
-            for x in range(w):
-                noise_val = biomes([x/w, y/h])
-                if noise_val < 0.1:
-                    row.append("PLAIN")
-                elif noise_val < 0.15:
-                    row.append("LAKES")
-                elif noise_val < 0.35:
-                    row.append("MOUNT")
-                else:
-                    row.append("DSSRT")
-            bWorld.append(row)
-        return bWorld
-
-    def createAltitude(self, world, w, h):
+    def createAltitude(self, biome, w, h):
         noise = PerlinNoise(octaves=15, seed=random.randint(0, 10000))
 
         randArea = []
-        for y, row in enumerate(world):
+        for y in range(h):
             altRow = []
-            for x, biome in enumerate(row):
+            for x in range(w):
                 noise_val = noise([x/w, y/h])
 
                 if biome == "PLAIN":

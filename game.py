@@ -22,7 +22,7 @@ def start():
     
 
 def update():
-    world.printWorld(world._world)
+    #world.printWorld(world._world)
 
     if True: #This determines when the game ends
         with open(r"C:\Users\John\Documents\Coding Projects\Into the Pylands\.vscode\settings.json", "w") as json_file:

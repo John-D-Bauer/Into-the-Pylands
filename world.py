@@ -1,30 +1,28 @@
 ''' TODO:
-    - Make different area instead of water
-    - Add more colors instead of using termcolor
+    - Determine how big the world should actually be
     - Make predetermined areas of the map
     - Combine both predetermined areas and random areas
 '''
 
 import random
 import os
-from termcolor import colored
 from perlin_noise import PerlinNoise
-
-
 
 class World:
     def __init__(self):
-        self._worldW = 89
-        self._worldH = 55
         self._world = []
+        self._worldH = 19*3
+        self._worldW = 19*3
 
         self.worldStrs = {
-            "GRSS" : [colored(", ", "green"), colored(" ,", "green"), colored(",,", "green")],
-            "ROCK" : colored("88", "grey"),
-            "WATR" : colored("≈≈", "blue"), 
-            "LAVA" : colored("≈≈", "red"),
-            "GRVL" : [colored(", ", "grey"), colored(" ,", "grey"), colored(",,", "grey")],
-            "SAND" : [colored(", ", "yellow"), colored(" ,", "yellow"), colored(",,", "yellow")],
+            "GRSS" : ["\033[38;5;2m, ", "\033[38;5;2m ,", "\033[38;5;2m,,"],
+            "ROCK" : "\033[38;5;243m88",
+            "LAVA" : "\033[38;5;1m≈≈",
+            "WATR" : "\033[38;5;4m≈≈",
+            "GRVL" : ["\033[38;5;232m, ", "\033[38;5;232m ,", "\033[38;5;232m,,"],
+            "SAND" : ["\033[38;5;3m, ", "\033[38;5;3m ,", "\033[38;5;3m,,"],
+            "SNOW" : ["\033[38;5;231m, ", "\033[38;5;231m ,", "\033[38;5;231m,,"],
+            "ICEY" : "\033[38;5;32m88",
         }
 
     def buildWorld(self):
@@ -34,51 +32,55 @@ class World:
 
         #self._world = self.buildStartingArea()
 
-        area_size = 29
+        area_size = 19
 
         plain = self.buildRandArea("PLAIN", area_size, area_size)
         plain2 = self.buildRandArea("PLAIN", area_size, area_size)
         plain3 = self.buildRandArea("PLAIN", area_size, area_size)
         mount = self.buildRandArea("MOUNT", area_size, area_size)
         mount2 = self.buildRandArea("MOUNT", area_size, area_size)
-        mount3 = self.buildRandArea("MOUNT", area_size, area_size)
         desert = self.buildRandArea("DSSRT", area_size, area_size)
         desert2 = self.buildRandArea("DSSRT", area_size, area_size)
-        lake = self.buildRandArea("LAKES", area_size, area_size)
+        snow = self.buildRandArea("SNOWY", area_size, area_size)
+        snow2 = self.buildRandArea("SNOWY", area_size, area_size)
 
-        biomes = [plain, plain2, plain3, mount, mount2, mount3, desert, desert2, lake]
+        biomes = [plain, plain2, plain3, mount, mount2, desert, desert2, snow, snow2]
 
         random.shuffle(biomes)
 
-        biomeRowCnt = 0
-        for biomeRowCnt in range(3):
-            biomeRow = [biomes[biomeRowCnt*3], biomes[(biomeRowCnt*3) + 1], biomes[(biomeRowCnt*3) + 2]]
-            for row, _ in enumerate(biomeRow[0]):
-                for biome in biomeRow:
-                    self.printRow(biome, row)
-                print()
-              
+        self._world = self.addBiomes(biomes)
 
-        #self._world = self.buildRandArea(81, 51)
+        self._worldW = len(self._world[0])
+        self._worldH = len(self._world)
+
             
-    def printRow(self, area, row):
+    def addRow(self, area, row):
         cRow = []
         for t in area[row]:
-            if t == "GRSS" or t == "SAND" or t == "GRVL":
+            if t == "GRSS" or t == "SAND" or t == "GRVL" or t == "SNOW":
                 iter = random.choice(self.worldStrs[t])
                 s = iter
             else:
                 s = self.worldStrs[t]
             cRow.append(s)
-                
-        #os.system("cls")
-        for s in cRow:
-            print(s, end="")
+        return cRow
+
+    def addBiomes(self, biomes):
+        biomeRowCnt = 0
+        newWorld = []
+        for biomeRowCnt in range(3):
+            biomeRow = [biomes[biomeRowCnt*3], biomes[(biomeRowCnt*3) + 1], biomes[(biomeRowCnt*3) + 2]]
+            for row, _ in enumerate(biomeRow[0]):
+                newRow = []
+                for biome in biomeRow:
+                    newRow += self.addRow(biome, row)
+                newWorld.append(newRow)
+        return newWorld
 
 
 
     def buildStartingArea(self):
-        start = [
+        return [
             ["GRSS", "GRSS", "GRSS", "GRSS", "GRSS", "GRSS", "GRSS", "GRSS", "GRSS", "GRSS", "GRSS"],
             ["ROCK", "GRSS", "GRSS", "GRSS", "GRSS", "ROCK", "GRSS", "ROCK", "GRSS", "GRSS", "ROCK"],
             ["GRSS", "GRSS", "GRSS", "ROCK", "ROCK", "GRSS", "GRSS", "GRSS", "GRSS", "GRSS", "ROCK"],
@@ -92,8 +94,6 @@ class World:
             ["GRSS", "GRSS", "ROCK", "GRSS", "GRSS", "GRSS", "GRSS", "GRSS", "GRSS", "ROCK", "ROCK"],
             ["ROCK", "ROCK", "ROCK", "ROCK", "GRSS", "GRSS", "ROCK", "GRSS", "ROCK", "GRSS", "ROCK"],
         ]
-
-        return start
 
     def buildRandArea(self, biome, width, height):
         randArea = self.createAltitude(biome, width, height)
@@ -114,8 +114,11 @@ class World:
                         altRow.append("GRSS")
                     else:
                         altRow.append("ROCK")
-                elif biome == "LAKES":
-                    altRow.append("WATR")
+                elif biome == "SNOWY":
+                    if noise_val < 0.2:
+                        altRow.append("SNOW")
+                    else:
+                        altRow.append("ICEY")
                 elif biome == "MOUNT":
                     if noise_val < 0.15:
                         altRow.append("GRVL")
@@ -131,24 +134,11 @@ class World:
 
         return randArea
 
-        
 
     def printWorld(self, area):
-        colorArea = []
-        for row in area:
-            newRow = []
-            for t in row:
-                if t == "GRSS" or t == "SAND" or t == "GRVL":
-                    iter = random.choice(self.worldStrs[t])
-                    s = iter
-                else:
-                    s = self.worldStrs[t]
-                newRow.append(s)
-            colorArea.append(newRow)
-
         #os.system("cls")
-        for row in colorArea:
+        for row in area:
             for s in row:
                 print(s, end="")
-            print()
+            print("\033[38;5;7m")
 
